@@ -1,0 +1,50 @@
+#! /usr/local/bin/python3
+
+from subprocess import call
+import random
+import json
+
+list = []
+ch_len = 10
+index = 0
+score = 0
+
+
+word_list = open('./wordlist.txt', 'r')
+dictionary = json.load(open('./dictionary-lc.json','r'))
+
+for word in word_list:
+    if len(word) < 12 and len(word) > 3:
+        list.append(str.strip(word))
+
+random.shuffle(list)
+
+
+list = list[0:ch_len]
+
+while True:
+    if (index >= len(list)):
+
+        print('\033[5m Final Score: {}/{}'.format( score, ch_len))
+        break
+
+    cur_word = list[index]
+
+    call(['say', cur_word])
+    call(['say', dictionary[cur_word]])
+    call(['say', cur_word])
+
+    text = str.strip(str(input('Please type what you heard: ')))
+
+    if(str.lower(text) == str.lower(cur_word)):
+        print('\033[1;32m Well done! \033[0m')
+        score += 1
+    else:
+        print('=========================================')
+        print('Expected word:', dictionary[cur_word])
+        print('Expected word:', cur_word)
+        print('Entered word: ', text)
+        print('\033[1;31;40m Try again!\033[0m')
+        print('=========================================')
+
+    index += 1
