@@ -4,47 +4,62 @@ from subprocess import call
 import random
 import json
 
+# setup
+
 list = []
-ch_len = 10
-index = 0
-score = 0
+CH_LEN = 10
+dictionary = {}
 
 
-word_list = open('./wordlist.txt', 'r')
-dictionary = json.load(open('./dictionary-lc.json','r'))
+def init():
+    word_list = open('./wordlist.txt', 'r')
+    global dictionary, list, CH_LEN
 
-for word in word_list:
-    if len(word) < 12 and len(word) > 3:
-        list.append(str.strip(word))
+    dictionary = json.load(open('./dictionary-lc.json', 'r'))
 
-random.shuffle(list)
+    for word in word_list:
+        if len(word) < 12 and len(word) > 3:
+            list.append(str.strip(word))
+    random.shuffle(list)
+    list = list[0:CH_LEN]
 
 
-list = list[0:ch_len]
+def game_loop():
+    global dictionary, list, CH_LEN
+    index = 0
+    score = 0
 
-while True:
-    if (index >= len(list)):
+    while True:
+        if (index >= len(list)):
+            print('\033[5m Final Score: {}/{}\033[0m'
+                  .format(score, CH_LEN))
+            break
 
-        print('\033[5m Final Score: {}/{}'.format( score, ch_len))
-        break
+        cur_word = list[index]
+        call(['say', cur_word])
+        call(['say', dictionary[cur_word]])
+        call(['say', cur_word])
 
-    cur_word = list[index]
+        input_word = str.strip(str(input('Please type what you heard: ')))
 
-    call(['say', cur_word])
-    call(['say', dictionary[cur_word]])
-    call(['say', cur_word])
+        if(str.lower(input_word) == str.lower(cur_word)):
+            print('\033[1;32m Well done! \033[0m')
+            score += 1
+        else:
+            print('=========================================')
+            print('Expected word:', cur_word)
+            print('definition:', dictionary[cur_word])
+            print('Entered word: ', input_word)
+            print('\033[1;31;40m Try again!\033[0m')
+            print('=========================================')
 
-    text = str.strip(str(input('Please type what you heard: ')))
+        index += 1
 
-    if(str.lower(text) == str.lower(cur_word)):
-        print('\033[1;32m Well done! \033[0m')
-        score += 1
-    else:
-        print('=========================================')
-        print('Expected word:', dictionary[cur_word])
-        print('Expected word:', cur_word)
-        print('Entered word: ', text)
-        print('\033[1;31;40m Try again!\033[0m')
-        print('=========================================')
 
-    index += 1
+def main():
+    init()
+    game_loop()
+
+
+if __name__ == '__main__':
+    main()
