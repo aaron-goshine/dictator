@@ -6,19 +6,22 @@ import json
 
 # setup
 
-list = []
 CH_LEN = 10
+CH_LEVEL = 0
+WORD_BASE_LEN = 6
+
+list = []
 dictionary = {}
 
 
 def init():
     word_list = open('./wordlist.txt', 'r')
-    global dictionary, list, CH_LEN
+    global dictionary, list, CH_LEN, CH_LEVEL, WORD_BASE_LEN
 
     dictionary = json.load(open('./dictionary-lc.json', 'r'))
 
     for word in word_list:
-        if len(word) < 12 and len(word) > 3:
+        if len(word) < (WORD_BASE_LEN + CH_LEVEL) and len(word) > CH_LEVEL:
             list.append(str.strip(word))
     random.shuffle(list)
     list = list[0:CH_LEN]
