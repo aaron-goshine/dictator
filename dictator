@@ -3,39 +3,72 @@
 from subprocess import call
 import random
 import json
-
+import shelve
+import sys
+from contextlib import closing
 # setup
 
-CH_LEN = 10
-CH_LEVEL = 0
-WORD_BASE_LEN = 6
+ch_len = 10
 
 list = []
 dictionary = {}
+user_config = {'score': 0, 'level': 0}
+word_base_len = 6
+
+
+def update_user_config(score=None, level=None, words_seen=None):
+    global user_config
+    with closing(shelve.open('user_shelf.db')) as s:
+        if score:
+            user_config['score'] = score
+        if level:
+            user_config['level'] = level
+        if words_seen:
+            user_config['words_seen'] = words_seen
+        s['default_user'] = user_config
+
+
+def word_for_level(word):
+    global user_config
+    user_level = user_config.get('level')
+    return len(word) < (word_base_len + user_level) and \
+        len(word) > user_config.get('level')
 
 
 def init():
-    word_list = open('./wordlist.txt', 'r')
-    global dictionary, list, CH_LEN, CH_LEVEL, WORD_BASE_LEN
-
+    global dictionary, list, ch_len, user_config
+    global user_level, word_base_len
     dictionary = json.load(open('./dictionary-lc.json', 'r'))
+    with closing(shelve.open('user_shelf.db')) as s:
+        if (s.get('default_user')):
+            user_config = s.get('default_user')
 
+    word_list = open('./wordlist.txt', 'r')
     for word in word_list:
-        if len(word) < (WORD_BASE_LEN + CH_LEVEL) and len(word) > CH_LEVEL:
+        if word_for_level(word):
             list.append(str.strip(word))
+    word_list.close()
+
     random.shuffle(list)
-    list = list[0:CH_LEN]
+    list = list[0:ch_len]
 
 
 def game_loop():
-    global dictionary, list, CH_LEN
+    global dictionary, list, ch_len, user_config
     index = 0
     score = 0
 
     while True:
         if (index >= len(list)):
             print('\033[5m Final Score: {}/{}\033[0m'
-                  .format(score, CH_LEN))
+                  .format(score, ch_len))
+            updated_score = user_config.get('score') + score
+            updated_level = None
+            if (updated_score != user_config.get('score') and
+                    updated_score % 10 == 0):
+                updated_level = user_config.get('level') + 1
+
+            update_user_config(score=updated_score, level=updated_level)
             break
 
         cur_word = list[index]
