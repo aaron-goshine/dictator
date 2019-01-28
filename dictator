@@ -18,7 +18,7 @@ word_base_len = 6
 
 def update_user_config(score=None, level=None, words_seen=None):
     global user_config
-    with closing(shelve.open('user_shelf.db')) as s:
+    with closing(shelve.open('./data/user_shelf.db')) as s:
         if score:
             user_config['score'] = score
         if level:
@@ -38,12 +38,12 @@ def word_for_level(word):
 def init():
     global dictionary, list, ch_len, user_config
     global user_level, word_base_len
-    dictionary = json.load(open('./dictionary-lc.json', 'r'))
-    with closing(shelve.open('user_shelf.db')) as s:
+    dictionary = json.load(open('./assets/dictionary-lc.json', 'r'))
+    with closing(shelve.open('./data/user_shelf.db')) as s:
         if (s.get('default_user')):
             user_config = s.get('default_user')
 
-    word_list = open('./wordlist.txt', 'r')
+    word_list = open('./assets/wordlist.txt', 'r')
     for word in word_list:
         if word_for_level(word):
             list.append(str.strip(word))
