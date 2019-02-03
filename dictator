@@ -87,6 +87,7 @@ def draw_game():
     supplied_word = ""
     message = ""
     runing = True
+    current_definition = ""
 
     def red(text):
         return '\033[1;31m{}\033[0m'.format(text)
@@ -104,27 +105,31 @@ def draw_game():
         return '\033[0;30;47m{}\033[0m'.format(text)
 
     while (runing):
-        h, w = os.popen('stty size', 'r').read().split()
-        width, height = int(w), int(h)
+        _, w = os.popen('stty size', 'r').read().split()
+        width = int(w)
         os.system('clear')
 
+        user = dictator.get_user()
         # Declaration of strings
+        hud = " LEVEL: {}, TOP SCORE: {}".format(user['level'], user['score'])
         title = "Dictator \n"
         subtitle = "Written by Aaron Goshine \n"
         how_to_play = "Please listen carefully and type the words you hear\n"
         expected = "Expected word: {}".format(expected_word)
         supplied = "Supplied word: {}".format(supplied_word)
-        hud = " LEVEL: {}, TOP SCORE: {}".format(width, height)
+        definition = "Definition: {}".format(current_definition)
 
-        print(dictator.get_user())
         # Rendering some text
         print(notice(hud.ljust(width - 1, ' ')))
         print(title.center(width, ' '))
         print(subtitle.center(width, ' '))
-        print(('-' * 24).center(width, ' '))
+        print(('-' * (width // 2)).center(width, ' '))
         print(how_to_play.center(width, ' '))
         print(expected.center(width, ' '))
         print(supplied.center(width, ' '))
+        print('\n')
+        print(yellow(definition.center(width, ' ')))
+        print('\n')
         print(message)
 
         # Refresh the screen
@@ -137,7 +142,9 @@ def draw_game():
                 dictator = Dictator()
             else:
                 runing = False
-                print(blink('!!!Catch yooo later!!!'.center(width, ' ')))
+                print(blink(('-' * (width // 2)).center(width, ' ')))
+                print(yellow('!!!Catch yooo later!!!'.center(width, ' ')))
+                print(blink(('-' * (width // 2)).center(width, ' ')))
                 break
 
         # Wait for next input
@@ -147,13 +154,11 @@ def draw_game():
         if (played):
             if (played[0]):
                 message = green('Well done'.center(width, ' '))
-                expected_word = played[1]
-                supplied_word = played[2]
             else:
                 message = red('Try again!'.center(width, ' '))
-                expected_word = played[1]
-                supplied_word = played[2]
-        time.sleep(1)
+        expected_word = played[1]
+        supplied_word = played[2]
+        current_definition = played[3]
 
 
 def main():
