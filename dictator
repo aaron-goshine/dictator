@@ -1,11 +1,12 @@
 #! /usr/local/bin/python3
 
 from subprocess import call
+from contextlib import closing
 import random
 import json
 import shelve
-from contextlib import closing
-import curses
+import time
+import os
 
 
 class Dictator:
@@ -13,10 +14,12 @@ class Dictator:
     dictionary = {}
     user_config = {'score': 0, 'level': 0}
     word_base_len = 6
+    current_word = ''
+
     index = 0
     score = 0
 
-    def __init__(self, number_of_words=10):
+    def __init__(self, number_of_words=3):
         self. number_of_words = number_of_words
         self.dictionary = json.load(open('./assets/dictionary-lc.json', 'r'))
         with closing(shelve.open('./data/user_shelf.db')) as s:
@@ -30,30 +33,34 @@ class Dictator:
         word_list.close()
 
         random.shuffle(self.list)
-        self.list = self.list[0:self.number_of_words]
+        self.list = iter(self.list[0:self.number_of_words])
 
     def play(self):
-        if (self.index >= len(self.list)):
-            updated_score = self.user_config.get('score') + self.score
+        try:
+            self.current_word = next(self.list)
+        except StopIteration:
+            self.current_word = None
+            return False
+
+        if (self.current_word):
+            call(['say', self.current_word])
+            call(['say', self.dictionary[self.current_word]])
+            call(['say', self.current_word])
+        return True
+
+    def check_word(self, input_word):
+        if (not self.current_word):
+            return None
+        current_meaning = self.dictionary[self.current_word]
+        is_correct = (str.lower(input_word) == str.lower(self.current_word))
+        if is_correct:
+            updated_score = self.user_config.get('score') + 1
             updated_level = None
             if (updated_score != self.user_config.get('score') and
                     updated_score % 10 == 0):
-                updated_level = self.user_config.get('level') + 1
-
+                    updated_level = self.user_config.get('level') + 1
             self.update_user_config(score=updated_score, level=updated_level)
-
-        cur_word = self.list[self.index]
-        call(['say', cur_word])
-        call(['say', self.dictionary[cur_word]])
-        call(['say', cur_word])
-        self.index += 1
-
-    def check_word(self, input_word):
-        cur_word = self.list[self.index]
-        if(str.lower(input_word) == str.lower(cur_word)):
-            return (True, cur_word, input_word)
-        else:
-            return (False, cur_word, input_word, self.dictionary[cur_word])
+        return [is_correct, self.current_word, input_word, current_meaning]
 
     def update_user_config(self, score=None, level=None, words_seen=None):
         with closing(shelve.open('./data/user_shelf.db')) as s:
@@ -65,120 +72,92 @@ class Dictator:
                 self.user_config['words_seen'] = words_seen
             s['default_user'] = self.user_config
 
+    def get_user(self):
+        return self.user_config
+
     def word_for_level(self, word):
         user_level = self.user_config.get('level')
         return len(word) < (self.word_base_len + user_level) and \
             len(word) > self.user_config.get('level')
 
 
-def draw_game(stdscr):
-    k = 0
-    cursor_x = 0
-    cursor_y = 0
-    first_run = True
+def draw_game():
     dictator = Dictator()
-    # Clear and refresh the screen for a blank canvas
-    stdscr.clear()
-    stdscr.refresh()
+    expected_word = ""
+    supplied_word = ""
+    message = ""
+    runing = True
 
-    # Start colors in curses
-    curses.start_color()
-    curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)
-    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
-    curses.init_pair(3, curses.COLOR_BLACK, curses.COLOR_WHITE)
+    def red(text):
+        return '\033[1;31m{}\033[0m'.format(text)
 
-    typed_word = ""
-    # Loop where k is the last character pressed
-    while (k != 27):
+    def green(text):
+        return '\033[1;32m{}\033[0m'.format(text)
 
-        # Initialization
-        stdscr.clear()
-        height, width = stdscr.getmaxyx()
+    def blink(text):
+        return '\033[5m{}\033[0m'.format(text)
 
-       
+    def yellow(text):
+        return '\033[0;33m{}\033[0m'.format(text)
+
+    def notice(text):
+        return '\033[0;30;47m{}\033[0m'.format(text)
+
+    while (runing):
+        h, w = os.popen('stty size', 'r').read().split()
+        width, height = int(w), int(h)
+        os.system('clear')
+
         # Declaration of strings
-        title = "Dictator"[:width-1]
-        subtitle = "Written by Aaron Goshine"[:width-1]
-        expected = "Expected word: {}".format(k)[:width-1]
-        supplied = "Supplied word: {}".format(typed_word)[:width-1]
-        how_to_play = "Please listen carefully and type the words you hear"
+        title = "Dictator \n"
+        subtitle = "Written by Aaron Goshine \n"
+        how_to_play = "Please listen carefully and type the words you hear\n"
+        expected = "Expected word: {}".format(expected_word)
+        supplied = "Supplied word: {}".format(supplied_word)
+        hud = " LEVEL: {}, TOP SCORE: {}".format(width, height)
 
-        statusbarstr = "Press 'esc' to exit | SCORE: {}".format(cursor_y)
-
-        # Centering calculations
-        start_x_title = int((width // 2) - (len(title) //
-                                            2) - len(title) % 2)
-
-        start_x_subtitle = int((width // 2) - (len(subtitle) //
-                                               2) - len(subtitle) % 2)
-
-        start_x_expected = int((width // 2) - (len(expected) //
-                                               2) - len(expected) % 2)
-
-        start_x_supplied = int((width // 2) - (len(supplied) //
-                                               2) - len(supplied) % 2)
-
-        start_x_how_to = int((width // 2) - (len(how_to_play) //
-                                             2) - len(how_to_play) % 2)
-        start_y = int((height // 2) - 2)
-
+        print(dictator.get_user())
         # Rendering some text
-        whstr = "level: {}, top score: {}".format(width, height)
-        stdscr.addstr(0, 0, whstr, curses.color_pair(1))
-
-        # Render status bar
-        stdscr.attron(curses.color_pair(3))
-        stdscr.addstr(height-1, 0, statusbarstr)
-        stdscr.addstr(height-1, len(statusbarstr), " " * (width - len(
-            statusbarstr) - 1))
-        stdscr.attroff(curses.color_pair(3))
-
-        # Turning on attributes for title
-        stdscr.attron(curses.color_pair(2))
-        stdscr.attron(curses.A_BOLD)
-
-        # Rendering title
-        stdscr.addstr(start_y, start_x_title, title)
-
-        # Turning off attributes for title
-        stdscr.attroff(curses.color_pair(2))
-        stdscr.attroff(curses.A_BOLD)
-
-        # Print rest of text
-        stdscr.addstr(start_y + 1, start_x_subtitle, subtitle)
-        stdscr.addstr(start_y + 3, (width // 2) - 2, '-' * 8)
-        stdscr.addstr(start_y + 5, start_x_how_to, how_to_play)
-
-        stdscr.addstr(start_y + 8, start_x_expected, expected)
-        stdscr.addstr(start_y + 9, start_x_supplied, supplied)
-        stdscr.move(cursor_y, cursor_x)
+        print(notice(hud.ljust(width - 1, ' ')))
+        print(title.center(width, ' '))
+        print(subtitle.center(width, ' '))
+        print(('-' * 24).center(width, ' '))
+        print(how_to_play.center(width, ' '))
+        print(expected.center(width, ' '))
+        print(supplied.center(width, ' '))
+        print(message)
 
         # Refresh the screen
-        stdscr.refresh()
-
-        if k == 10:
-            played = dictator.check_word(typed_word)
-            if (played[0]):
-                expected = 'Well done'
+        print('\n\n Please spell the word you heard: ')
+        playing = dictator.play()
+        if not playing:
+            yes = ['yes', 'y']
+            ans = str.strip(str(input('Continue playing: [y/n]')))
+            if(str.lower(ans) in yes):
+                dictator = Dictator()
             else:
-                expected = 'try again'
-            dictator.play()
-
-        if k == 0:
-            dictator.play()
+                runing = False
+                print(blink('!!!Catch yooo later!!!'.center(width, ' ')))
+                break
 
         # Wait for next input
-        k = stdscr.getch()
+        typed_word = str.strip(str(input('')))
+        played = dictator.check_word(typed_word)
 
-        if k >= 97 and k <= 172:
-            typed_word = typed_word + chr(k)
+        if (played):
+            if (played[0]):
+                message = green('Well done'.center(width, ' '))
+                expected_word = played[1]
+                supplied_word = played[2]
+            else:
+                message = red('Try again!'.center(width, ' '))
+                expected_word = played[1]
+                supplied_word = played[2]
+        time.sleep(1)
 
 
 def main():
-    # dictator = Dictator()
-    # dictator.play()
-    #
-    curses.wrapper(draw_game)
+    draw_game()
 
 
 if __name__ == '__main__':
