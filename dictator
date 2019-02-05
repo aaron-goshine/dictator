@@ -7,6 +7,7 @@ import json
 import shelve
 import time
 import os
+import sys
 
 
 class Dictator:
@@ -18,9 +19,11 @@ class Dictator:
 
     index = 0
     score = 0
+    stage_width = 0
 
-    def __init__(self, number_of_words=3):
+    def __init__(self, number_of_words=10, stage_width=80):
         self. number_of_words = number_of_words
+        self. stage_width = stage_width
         self.dictionary = json.load(open('./assets/dictionary-lc.json', 'r'))
         with closing(shelve.open('./data/user_shelf.db')) as s:
             if (s.get('default_user')):
@@ -35,17 +38,22 @@ class Dictator:
         random.shuffle(self.list)
         self.list = iter(self.list[0:self.number_of_words])
 
-    def play(self):
+    def next_word(self):
         try:
             self.current_word = next(self.list)
         except StopIteration:
             self.current_word = None
             return False
+        return True
 
+    def play(self):
         if (self.current_word):
             call(['say', self.current_word])
+            return True
+
+    def play_definition(self):
+        if (self.current_word):
             call(['say', self.dictionary[self.current_word]])
-            call(['say', self.current_word])
         return True
 
     def check_word(self, input_word):
@@ -112,7 +120,7 @@ def draw_game():
         user = dictator.get_user()
         # Declaration of strings
         hud = " LEVEL: {}, TOP SCORE: {}".format(user['level'], user['score'])
-        title = "Dictator \n"
+        title = "DICTATOR \n"
         subtitle = "Written by Aaron Goshine \n"
         how_to_play = "Please listen carefully and type the words you hear\n"
         expected = "Expected word: {}".format(expected_word)
@@ -133,13 +141,37 @@ def draw_game():
         print(message)
 
         # Refresh the screen
-        print('\n\n Please spell the word you heard: ')
-        playing = dictator.play()
-        if not playing:
-            ans = str.strip(str(input('Continue playing: [y/n]')))
-            print(ans)
-            if(str.lower(ans) == 'yes' or str.lower(ans) == 'y'):
-                dictator = Dictator(10)
+        has_word = dictator.next_word()
+        dictator.play()
+        d = yellow('d')
+        c = yellow('c')
+        r = yellow('r')
+        y = green('y')
+        n = red('n')
+
+        prompt = 'Choose [{}]efinition, [{}]epeat, [{}]ontinue | word: '.format(d, r, c)
+
+        if has_word:
+            ans = str.strip(str(input(prompt)))
+
+        while ans in ['d','r']:
+            if (str.lower(ans) == 'd'):
+                dictator.play_definition()
+                dictator.play()
+
+            if (str.lower(ans) == 'r'):
+                dictator.play()
+            ans = str.strip(str(input(prompt)))
+
+        typed_word = ans
+
+        if not has_word:
+            ans = str.strip(str(input('Continue playing? [{}]/[{}] :'.format(y, n))))
+            if(str.lower(ans) == 'y'):
+                dictator = Dictator()
+                has_word = dictator.next_word()
+                dictator.play()
+                typed_word = str.strip(str(input('Word?: ')))
             else:
                 runing = False
                 print(blink(('-' * (width // 2)).center(width, ' ')))
@@ -147,18 +179,16 @@ def draw_game():
                 print(blink(('-' * (width // 2)).center(width, ' ')))
                 break
 
-        # Wait for next input
-        typed_word = str.strip(str(input('')))
-        played = dictator.check_word(typed_word)
+        results = dictator.check_word(typed_word)
 
-        if (played):
-            if (played[0]):
+        if (results):
+            if (results[0]):
                 message = green('Well done'.center(width, ' '))
             else:
                 message = red('Try again!'.center(width, ' '))
-        expected_word = played[1]
-        supplied_word = played[2]
-        current_definition = played[3]
+        expected_word = results[1]
+        supplied_word = results[2]
+        current_definition = results[3]
 
 
 def main():
@@ -166,4 +196,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except (KeyboardInterrupt, SystemExit):
+        os.system('clear')
+        sys.exit()
