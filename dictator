@@ -136,10 +136,10 @@ def draw_game():
         print('\n\n Please spell the word you heard: ')
         playing = dictator.play()
         if not playing:
-            yes = ['yes', 'y']
             ans = str.strip(str(input('Continue playing: [y/n]')))
-            if(str.lower(ans) in yes):
-                dictator = Dictator()
+            print(ans)
+            if(str.lower(ans) == 'yes' or str.lower(ans) == 'y'):
+                dictator = Dictator(10)
             else:
                 runing = False
                 print(blink(('-' * (width // 2)).center(width, ' ')))
