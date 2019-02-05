@@ -3,6 +3,7 @@
 import os
 from dictator import Dictator
 
+
 def draw_game():
     dictor = Dictator()
     expected_word = ""
@@ -63,12 +64,13 @@ def draw_game():
         y = green('y')
         n = red('n')
 
-        prompt = 'Choose [{}]efinition, [{}]epeat, [{}]ontinue | word: '.format(d, r, c)
+        template = 'Choose [{}]efinition, [{}]epeat, [{}]ontinue | word: '
+        prompt = template.format(d, r, c)
 
         if has_word:
             ans = str.strip(str(input(prompt)))
 
-        while ans in ['d','r']:
+        while ans in ['d', 'r']:
             if (str.lower(ans) == 'd'):
                 dictor.play_definition()
                 dictor.play()
@@ -76,11 +78,11 @@ def draw_game():
             if (str.lower(ans) == 'r'):
                 dictor.play()
             ans = str.strip(str(input(prompt)))
-
         typed_word = ans
 
         if not has_word:
-            ans = str.strip(str(input('Continue playing? [{}]/[{}] :'.format(y, n))))
+            ans = str.strip(str(input(
+                'Continue playing? [{}]/[{}] :'.format(y, n))))
             if(str.lower(ans) == 'y'):
                 dictor = Dictator()
                 has_word = dictor.next_word()
@@ -103,4 +105,3 @@ def draw_game():
         expected_word = results[1]
         supplied_word = results[2]
         current_definition = results[3]
-

@@ -4,6 +4,7 @@ import os
 import sys
 from dictator import Dictator
 
+
 def draw_game():
     dictator = Dictator()
     expected_word = ""
@@ -64,12 +65,13 @@ def draw_game():
         y = green('y')
         n = red('n')
 
-        prompt = 'Choose [{}]efinition, [{}]epeat, [{}]ontinue | word: '.format(d, r, c)
+        template = 'Choose [{}]efinition, [{}]epeat, [{}]ontinue | word: '
+        prompt = template.format(d, r, c)
 
         if has_word:
             ans = str.strip(str(input(prompt)))
 
-        while ans in ['d','r']:
+        while ans in ['d', 'r']:
             if (str.lower(ans) == 'd'):
                 dictator.play_definition()
                 dictator.play()
@@ -81,7 +83,8 @@ def draw_game():
         typed_word = ans
 
         if not has_word:
-            ans = str.strip(str(input('Continue playing? [{}]/[{}] :'.format(y, n))))
+            ans = str.strip(str(input(
+                'Continue playing? [{}]/[{}] :'.format(y, n))))
             if(str.lower(ans) == 'y'):
                 dictator = Dictator()
                 has_word = dictator.next_word()

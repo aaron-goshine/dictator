@@ -3,8 +3,7 @@ from contextlib import closing
 import random
 import json
 import shelve
-import os
-import sys
+
 
 class Dictator:
     list = []
@@ -62,7 +61,7 @@ class Dictator:
             updated_level = None
             if (updated_score != self.user_config.get('score') and
                     updated_score % 10 == 0):
-                    updated_level = self.user_config.get('level') + 1
+                updated_level = self.user_config.get('level') + 1
             self.update_user_config(score=updated_score, level=updated_level)
         return [is_correct, self.current_word, input_word, current_meaning]
 
@@ -83,4 +82,3 @@ class Dictator:
         user_level = self.user_config.get('level')
         return len(word) < (self.word_base_len + user_level) and \
             len(word) > self.user_config.get('level')
-
