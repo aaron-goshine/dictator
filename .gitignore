@@ -1,4 +1,4 @@
 ./data/*
 *.dbm
 *.db
-
+__pycache__

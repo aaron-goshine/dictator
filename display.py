@@ -1,11 +1,10 @@
 #! /usr/local/bin/python3
 
 import os
-import sys
 from dictator import Dictator
 
 def draw_game():
-    dictator = Dictator()
+    dictor = Dictator()
     expected_word = ""
     supplied_word = ""
     message = ""
@@ -32,7 +31,7 @@ def draw_game():
         width = int(w)
         os.system('clear')
 
-        user = dictator.get_user()
+        user = dictor.get_user()
         # Declaration of strings
         hud = " LEVEL: {}, TOP SCORE: {}".format(user['level'], user['score'])
         title = "DICTATOR \n"
@@ -56,8 +55,8 @@ def draw_game():
         print(message)
 
         # Refresh the screen
-        has_word = dictator.next_word()
-        dictator.play()
+        has_word = dictor.next_word()
+        dictor.play()
         d = yellow('d')
         c = yellow('c')
         r = yellow('r')
@@ -71,11 +70,11 @@ def draw_game():
 
         while ans in ['d','r']:
             if (str.lower(ans) == 'd'):
-                dictator.play_definition()
-                dictator.play()
+                dictor.play_definition()
+                dictor.play()
 
             if (str.lower(ans) == 'r'):
-                dictator.play()
+                dictor.play()
             ans = str.strip(str(input(prompt)))
 
         typed_word = ans
@@ -83,9 +82,9 @@ def draw_game():
         if not has_word:
             ans = str.strip(str(input('Continue playing? [{}]/[{}] :'.format(y, n))))
             if(str.lower(ans) == 'y'):
-                dictator = Dictator()
-                has_word = dictator.next_word()
-                dictator.play()
+                dictor = Dictator()
+                has_word = dictor.next_word()
+                dictor.play()
                 typed_word = str.strip(str(input('Word?: ')))
             else:
                 runing = False
@@ -94,7 +93,7 @@ def draw_game():
                 print(blink(('-' * (width // 2)).center(width, ' ')))
                 break
 
-        results = dictator.check_word(typed_word)
+        results = dictor.check_word(typed_word)
 
         if (results):
             if (results[0]):
@@ -105,14 +104,3 @@ def draw_game():
         supplied_word = results[2]
         current_definition = results[3]
 
-
-def main():
-    draw_game()
-
-
-if __name__ == '__main__':
-    try:
-        main()
-    except (KeyboardInterrupt, SystemExit):
-        os.system('clear')
-        sys.exit()

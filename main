@@ -1,0 +1,17 @@
+#! /usr/local/bin/python3
+
+import os
+import sys
+from display import draw_game
+
+
+def main():
+    draw_game()
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (KeyboardInterrupt, SystemExit):
+        os.system('clear')
+        sys.exit()
